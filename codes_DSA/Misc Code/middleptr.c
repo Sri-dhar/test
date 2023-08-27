@@ -1,0 +1,4 @@
+void middleptr(node *List)
+{
+    
+}
