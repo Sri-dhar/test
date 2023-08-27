@@ -1,0 +1,279 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
+typedef struct Node Node_t;
+typedef struct Node* node;
+
+struct Node {
+    int data;
+    node left;
+    node right;
+};
+
+node newnode(int data) {
+    node pnode = (node)malloc(sizeof(Node_t));
+    pnode->data = data;
+    pnode->left = NULL;
+    pnode->right = NULL;
+    return pnode;
+}
+
+struct Trunk {
+    struct Trunk* prev;
+    char* str;
+};
+
+struct Trunk* createTrunk(struct Trunk* prev, const char* str) {
+    struct Trunk* trunk = (struct Trunk*)malloc(sizeof(struct Trunk));
+    trunk->prev = prev;
+    trunk->str = strdup(str);
+    return trunk;
+}
+
+void showTrunks(struct Trunk* p) {
+    if (p == NULL) {
+        return;
+    }
+
+    showTrunks(p->prev);
+    printf("%s", p->str);
+}
+
+void printTree(struct Node* root, struct Trunk* prev, bool isLeft) {
+    if (root == NULL) {
+        return;
+    }
+
+    const char* prev_str = "    ";
+    struct Trunk* trunk = createTrunk(prev, prev_str);
+
+    printTree(root->right, trunk, true);
+
+    if (!prev) {
+        trunk->str = "|--";
+    }
+    else if (isLeft) {
+        trunk->str = "|--";
+        prev_str = "   |";
+    }
+    else {
+        trunk->str = "`--";
+        prev->str = strdup(prev_str);
+    }
+
+    showTrunks(trunk);
+    printf("%d\n", root->data);
+
+    if (prev) {
+        prev->str = strdup(prev_str);
+    }
+    trunk->str = "   |";
+
+    printTree(root->left, trunk, false);
+}
+
+node insertBST(node root, int data) {
+    if (root == NULL) {
+        return newnode(data);
+    }
+
+    if (data > root->data) {
+        root->left = insertBST(root->left, data);
+    } else if (data < root->data) {
+        root->right = insertBST(root->right, data);
+    }
+
+    return root;
+}
+
+void inorder(node root, int* count_arr, int* counter) {
+    if (root == NULL) {
+        return;
+    }
+
+    inorder(root->left, count_arr, counter);
+    count_arr[*counter] = root->data;
+    (*counter)++;
+    inorder(root->right, count_arr, counter);
+}
+
+void preorder(node root, int* inorder, int* i)
+{
+    if (!root)
+        return;
+    root->data = inorder[(*i)++];
+    preorder(root->left, inorder, i);
+    preorder(root->right, inorder, i);
+}
+
+void BSTtoMaxHeap(node root, int* inorder)
+{
+    int i = 0;
+    preorder(root, inorder, &i);
+}
+
+void printHeap(int* heap, int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", heap[i]);
+    }
+    printf("\n");
+}
+
+void buildHeap(node root, int* heap, int* index) {
+    if (root == NULL) {
+        return;
+    }
+
+    heap[*index] = root->data;
+    (*index)++;
+    buildHeap(root->left, heap, index);
+    buildHeap(root->right, heap, index);
+}
+
+node findNode(node root, node* parent, int data) {
+    if (root == NULL || root->data == data) {
+        return root;
+    }
+
+    *parent = NULL;
+    node current = root;
+
+    while (current != NULL) {
+        if (data < current->data) {
+            *parent = current;
+            current = current->left;
+        } else if (data > current->data) {
+            *parent = current;
+            current = current->right;
+        } else {
+            return current;
+        }
+    }
+
+    return NULL;
+}
+
+
+void deleteNode(node root, int data) {
+    node parent = NULL;
+    node nodeToDelete = findNode(root, &parent, data);
+
+    if (nodeToDelete == NULL) {
+        printf("Element not found in the max heap.\n");
+        return;
+    }
+
+    // Case 1: Deleting a leaf node
+    if (nodeToDelete->left == NULL && nodeToDelete->right == NULL) {
+        if (parent->left == nodeToDelete) {
+            parent->left = NULL;
+        } else {
+            parent->right = NULL;
+        }
+        free(nodeToDelete);
+        return;
+    }
+
+    // Case 2: Deleting a node with one child
+    if (nodeToDelete->left == NULL || nodeToDelete->right == NULL) {
+        node child = (nodeToDelete->left != NULL) ? nodeToDelete->left : nodeToDelete->right;
+        if (parent->left == nodeToDelete) {
+            parent->left = child;
+        } else {
+            parent->right = child;
+        }
+        free(nodeToDelete);
+        return;
+    }
+
+    // Case 3: Deleting a node with two children
+    node successor = nodeToDelete->right;
+    node successorParent = nodeToDelete;
+    while (successor->left != NULL) {
+        successorParent = successor;
+        successor = successor->left;
+    }
+
+    nodeToDelete->data = successor->data;
+    if (successorParent->left == successor) {
+        successorParent->left = successor->right;
+    } else {
+        successorParent->right = successor->right;
+    }
+    free(successor);
+}
+
+int main() {
+    node root = NULL;
+    printf("Enter the array: ");
+    printf("\nEnter -1 to stop\n");
+    int n;
+    scanf("%d", &n);
+    int count = 0;
+    while (n != -1) {
+        root = insertBST(root, n);
+        scanf("%d", &n);
+        count++;
+    }
+
+    int* count_arr = (int*)calloc(count, sizeof(int));
+    int counter = 0;
+    inorder(root, count_arr, &counter);
+
+    BSTtoMaxHeap(root, count_arr);
+
+    int* heap = (int*)calloc(count, sizeof(int));
+    int index = 0;
+    buildHeap(root, heap, &index);
+    printf("\n\nThe max heap is :\n\n");
+    printTree(root, NULL, false);
+
+    int a = 1;
+    while (a) {
+        printf("Do you want to enter or delete an element in the max heap?\n");
+        printf("1. Enter 1 if you want to enter an element\n");
+        printf("2. Enter -1 if you want to delete an element\n");
+        printf("3. Enter 0 if you want to exit\n");
+        int choice = 0;
+        scanf("%d", &choice);
+        if (choice == 1) {
+            printf("\n\nEnter the element you want to enter: ");
+            int elmt = 0;
+            scanf("%d", &elmt);
+            root = insertBST(root, elmt);
+            count++;
+            count_arr = (int*)realloc(count_arr, count * sizeof(int));
+            counter = 0;
+            inorder(root, count_arr, &counter);
+            BSTtoMaxHeap(root, count_arr);
+            heap = (int*)realloc(heap, count * sizeof(int));
+            index = 0;
+            buildHeap(root, heap, &index);
+            printf("\n\nThe new max heap is:\n\n");
+            printTree(root, NULL, false);
+        } else if (choice == -1) {
+            printf("\n\nEnter the element you want to delete: ");
+            int elmt = 0;
+            scanf("%d", &elmt);
+            deleteNode(root, elmt);
+            count--;
+            count_arr = (int*)realloc(count_arr, count * sizeof(int));
+            heap = (int*)realloc(heap, count * sizeof(int));
+            index = 0;
+            buildHeap(root, heap, &index);
+            printf("\n\nThe new max heap after deletion is:\n\n");
+            printTree(root, NULL, false);
+        } else if (choice == 0) {
+            break;
+        }
+    }
+
+    // Deletion
+    free(count_arr);
+    free(heap);
+
+    return 0;
+}
+//not able to find 4 while deleting
