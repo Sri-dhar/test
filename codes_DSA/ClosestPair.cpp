@@ -73,8 +73,9 @@ std::pair<std::pair<int,int>,std::pair<int,int>> closestPairRec(std::vector<std:
     //Sy contains all the points which lie in the regin of mid-s to mid+s by checking the x coordinates and pushing in Sy
     for(int i = low ; i<=high ; i++) if(std::abs(Py[i].first-Px[mid].first) < s) Sy.push_back(Py[i]);
     //warning is coming here because we have i as int whereas Sy.size() return type is size_t
+    int count = 0;
     for(int i=0 ; i<Sy.size(); i++){
-        for(int j= i+1; j<Sy.size()  && (Sy[j].second - Sy[i].second) < s; j++) {
+        for(int j= i+1; j<Sy.size()  && (Sy[j].second - Sy[i].second) < s && count++<14; j++) {
             long long int dis = distance(Sy[i],Sy[j]);
             if(dis<s){
                 s = dis;
