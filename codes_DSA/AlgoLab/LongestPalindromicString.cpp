@@ -7,7 +7,6 @@
 
 using namespace std;
 
-// Rename your max function to avoid conflicts with the max function from the algorithm header
 double maximum(double a, int b)
 {
     return (a > b) ? a : b;
